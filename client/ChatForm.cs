@@ -249,11 +249,11 @@ public class ChatForm : Form
         var closeBtn = new Button
         {
             Text = "✕",
-            Size = new Size(20, 20),
-            Location = new Point(_emojiContainer.Width - 24, 3),
+            Size = new Size(24, 24),
+            Location = new Point(_emojiContainer.Width - 30, 4),
             FlatStyle = FlatStyle.Flat,
             FlatAppearance = { BorderSize = 0 },
-            Font = new Font("微软雅黑", 9, FontStyle.Bold),
+            Font = new Font("微软雅黑", 10, FontStyle.Bold),
             ForeColor = Color.FromArgb(220, 50, 50),
             BackColor = Color.White,
             Cursor = Cursors.Hand,
@@ -263,6 +263,7 @@ public class ChatForm : Form
         closeBtn.MouseLeave += (s, e) => closeBtn.BackColor = Color.White;
         closeBtn.Click += (s, e) => _emojiContainer.Visible = false;
         _emojiContainer.Controls.Add(closeBtn);
+        closeBtn.BringToFront();
 
         // 分隔线
         var sepLine = new Label
@@ -623,11 +624,11 @@ public class ChatForm : Form
         _messageBox.SelectionColor = Color.Gray;
         _messageBox.SelectionFont = new Font("微软雅黑", 10);
 
-        // 内容（用 Segoe UI Emoji 支持彩色表情）
+        // 内容
         int contentStart = timeStart + time.Length + 1;
         _messageBox.Select(contentStart, content.Length);
         _messageBox.SelectionColor = contentColor ?? Color.FromArgb(51, 51, 51);
-        _messageBox.SelectionFont = new Font("Segoe UI Emoji", 12);
+        _messageBox.SelectionFont = new Font("微软雅黑", 12);
 
         _messageBox.SelectionStart = _messageBox.TextLength;
         _messageBox.ScrollToCaret();
@@ -670,7 +671,7 @@ public class ChatForm : Form
         _messageBox.AppendText(line);
         _messageBox.Select(start, line.Length);
         _messageBox.SelectionColor = color;
-        _messageBox.SelectionFont = new Font("Segoe UI Emoji", 10);
+        _messageBox.SelectionFont = new Font("微软雅黑", 10);
         _messageBox.SelectionStart = _messageBox.TextLength;
         try { _messageBox.ScrollToCaret(); } catch { }
     }
