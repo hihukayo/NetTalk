@@ -124,7 +124,8 @@ public class ChatForm : Form
             BackColor = Color.FromArgb(245, 245, 245),
             Font = new Font("黑体", 10),
             BorderStyle = BorderStyle.None,
-            DetectUrls = false
+            DetectUrls = false,
+            LanguageOption = RichTextBoxLanguageOptions.UIFonts
         };
         mainPanel.Controls.Add(_messageBox);
 
@@ -244,20 +245,22 @@ public class ChatForm : Form
         };
         _emojiContainer.Controls.Add(emojiTitle);
 
-        // 关闭按钮（右上角）
+        // 关闭按钮（红色 ✕）
         var closeBtn = new Button
         {
-            Text = "×",
+            Text = "✕",
             Size = new Size(20, 20),
             Location = new Point(_emojiContainer.Width - 24, 3),
             FlatStyle = FlatStyle.Flat,
             FlatAppearance = { BorderSize = 0 },
-            Font = new Font("微软雅黑", 10, FontStyle.Bold),
-            ForeColor = Color.Gray,
+            Font = new Font("微软雅黑", 9, FontStyle.Bold),
+            ForeColor = Color.FromArgb(220, 50, 50),
             BackColor = Color.White,
             Cursor = Cursors.Hand,
             TabStop = false
         };
+        closeBtn.MouseEnter += (s, e) => closeBtn.BackColor = Color.FromArgb(255, 235, 235);
+        closeBtn.MouseLeave += (s, e) => closeBtn.BackColor = Color.White;
         closeBtn.Click += (s, e) => _emojiContainer.Visible = false;
         _emojiContainer.Controls.Add(closeBtn);
 
@@ -620,11 +623,11 @@ public class ChatForm : Form
         _messageBox.SelectionColor = Color.Gray;
         _messageBox.SelectionFont = new Font("微软雅黑", 10);
 
-        // 内容
+        // 内容（用 Segoe UI Emoji 支持彩色表情）
         int contentStart = timeStart + time.Length + 1;
         _messageBox.Select(contentStart, content.Length);
         _messageBox.SelectionColor = contentColor ?? Color.FromArgb(51, 51, 51);
-        _messageBox.SelectionFont = new Font("微软雅黑", 12);
+        _messageBox.SelectionFont = new Font("Segoe UI Emoji", 12);
 
         _messageBox.SelectionStart = _messageBox.TextLength;
         _messageBox.ScrollToCaret();
@@ -667,7 +670,7 @@ public class ChatForm : Form
         _messageBox.AppendText(line);
         _messageBox.Select(start, line.Length);
         _messageBox.SelectionColor = color;
-        _messageBox.SelectionFont = new Font("微软雅黑", 10);
+        _messageBox.SelectionFont = new Font("Segoe UI Emoji", 10);
         _messageBox.SelectionStart = _messageBox.TextLength;
         try { _messageBox.ScrollToCaret(); } catch { }
     }
