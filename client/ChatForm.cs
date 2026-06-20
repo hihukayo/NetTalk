@@ -366,10 +366,11 @@ public class ChatForm : Form
             "🍹","🍺","🍻","🥂","🥃","🫙","🥤","🧃",
             "🧊");
 
-        // ====== @ 用户弹出列表 ======
+
+        // ====== @ M-gM-^TM-(M-fM-^HM-7M-eM-<M-9M-eM-^GM-:M-eM-^HM-^WM-hM-!M-( ======
         _atContainer = new Panel
         {
-            Size = new Size(160, 180),
+            Size = new Size(180, 220),
             BackColor = Color.White,
             BorderStyle = BorderStyle.FixedSingle,
             Visible = false
@@ -377,34 +378,58 @@ public class ChatForm : Form
 
         var atTitle = new Label
         {
-            Text = "👥 选择用户",
-            Font = new Font("微软雅黑", 8, FontStyle.Bold),
-            ForeColor = Color.FromArgb(120, 120, 120),
-            Location = new Point(6, 4),
+            Text = "👥 @M-gM-^AM-^KM-^?M-fM-^HM-^P",
+            Font = new Font("M-hM-^AM-^EM-^HM-^YM-^HM-^IM-^M-^BM-^AM-^L", 9, FontStyle.Bold),
+            ForeColor = Color.FromArgb(80, 80, 80),
+            Location = new Point(8, 5),
             AutoSize = true
         };
         _atContainer.Controls.Add(atTitle);
 
+        var atClose = new Button
+        {
+            Text = "✕",
+            Size = new Size(18, 18),
+            Location = new Point(_atContainer.Width - 22, 4),
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = { BorderSize = 0 },
+            Font = new Font("M-hM-^AM-^EM-^HM-^YM-^HM-^IM-^M-^BM-^AM-^L", 8, FontStyle.Bold),
+            ForeColor = Color.FromArgb(200, 40, 40),
+            BackColor = Color.White,
+            Cursor = Cursors.Hand,
+            TabStop = false
+        };
+        atClose.Click += (s, e) => _atContainer.Visible = false;
+        _atContainer.Controls.Add(atClose);
+
+        var atSep = new Label
+        {
+            Width = _atContainer.Width - 10,
+            Height = 1,
+            BackColor = Color.FromArgb(220, 220, 220),
+            Location = new Point(5, 26)
+        };
+        _atContainer.Controls.Add(atSep);
+
         _atListBox = new ListBox
         {
-            Location = new Point(4, 20),
-            Size = new Size(_atContainer.Width - 8, _atContainer.Height - 24),
+            Location = new Point(5, 29),
+            Size = new Size(_atContainer.Width - 10, _atContainer.Height - 33),
             BorderStyle = BorderStyle.None,
-            Font = new Font("微软雅黑", 11),
+            Font = new Font("M-hM-^AM-^EM-^HM-^YM-^HM-^IM-^M-^BM-^AM-^L", 12),
             BackColor = Color.White,
             ForeColor = Color.FromArgb(51, 51, 51)
         };
-        _atListBox.SelectedIndexChanged += (s, e) =>
+        _atListBox.Click += (s, e) =>
         {
-            if (_atListBox.SelectedItem == null) return;
-            InsertAtUser(_atListBox.SelectedItem.ToString()!);
+            if (_atListBox.SelectedItem != null)
+                InsertAtUser(_atListBox.SelectedItem.ToString()!);
         };
         _atListBox.DoubleClick += (s, e) =>
         {
-            if (_atListBox.SelectedItem == null) return;
-            InsertAtUser(_atListBox.SelectedItem.ToString()!);
+            if (_atListBox.SelectedItem != null)
+                InsertAtUser(_atListBox.SelectedItem.ToString()!);
         };
-        // 回车选中
         _atListBox.KeyDown += (s, e) =>
         {
             if (e.KeyCode == Keys.Enter && _atListBox.SelectedItem != null)
@@ -415,12 +440,10 @@ public class ChatForm : Form
         };
         _atContainer.Controls.Add(_atListBox);
         Controls.Add(_atContainer);
+        _atContainer.BringToFront();
 
-        // 输入框文字变化时检测 @
         _inputBox.TextChanged += (s, e) => CheckAtMention();
-
-        // 用列表的 LostFocus 关闭面板
-        _atContainer.LostFocus += (s, e) => _atContainer.Visible = false;
+        _inputBox.LostFocus += (s, e) => _atContainer.Visible = false;
 
         _client.OnMessageReceived += OnMessage;
         _client.OnDisconnected += OnDisconnected;
@@ -570,8 +593,8 @@ public class ChatForm : Form
         foreach (ToolStripItem item in _userMenu.Items)
         {
             string name = item.Text;
-            if (name != _username && (string.IsNullOrEmpty(filter) ||
-                name.StartsWith(filter, StringComparison.OrdinalIgnoreCase)))
+            if (string.IsNullOrEmpty(filter) ||
+                name.StartsWith(filter, StringComparison.OrdinalIgnoreCase))
                 _atListBox.Items.Add(name);
         }
 
