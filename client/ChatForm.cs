@@ -16,6 +16,7 @@ public class ChatForm : Form
     private readonly Button _logoutBtn;
     private readonly System.Windows.Forms.Timer _heartbeatTimer;
     private readonly FlowLayoutPanel _emojiPanel;
+    private readonly Panel _emojiContainer;
 
     // 表情快捷词典
     private static readonly Dictionary<string, string> EmojiMap = new()
@@ -225,59 +226,147 @@ public class ChatForm : Form
         _heartbeatTimer.Start();
 
         // ======== 表情弹出面板（类似 Win + .）========
-        _emojiPanel = new FlowLayoutPanel
+        _emojiContainer = new Panel
         {
-            Size = new Size(380, 210),
+            Size = new Size(440, 300),
             BackColor = Color.White,
             BorderStyle = BorderStyle.FixedSingle,
-            AutoScroll = true,
             Visible = false
         };
 
-        string[] emojiList = {
-            "😀","😃","😄","😁","😆","😅","🤣","😂",
-            "🙂","😊","😇","🥰","😍","🤩","😘","😗",
-            "😋","😛","😜","🤪","😝","🫠","😎","🤓",
-            "🥳","🥺","😢","😭","😤","😠","🤬","😱",
-            "👍","👎","👏","🙌","🤝","💪","✌️","🤞",
-            "❤️","🧡","💛","💚","💙","💜","🖤","💔",
-            "💯","🔥","⭐","🌟","✨","💡","🎯","🎉",
-            "🎊","🎈","🎁","🎀","🪄","🔮","💎","🌈",
-            "🌹","🌸","🌺","🌻","🌷","🌿","🍀","🌙",
-            "☀️","⛅","🌈","❄️","🔥","🌊","💦","✨",
-            "🐱","🐶","🐼","🐨","🐸","🦊","🐰","🐯",
-            "🍕","🍔","🌮","🍦","🍩","🍪","☕","🍺",
-        };
-
-        for (int i = 0; i < emojiList.Length; i++)
+        var emojiTitle = new Label
         {
-            var btn = new Button
-            {
-                Text = emojiList[i],
-                Size = new Size(44, 44),
-                FlatStyle = FlatStyle.Flat,
-                FlatAppearance = { BorderSize = 0 },
-                Font = new Font("Segoe UI Emoji", 20),
-                BackColor = Color.White,
-                Cursor = Cursors.Hand,
-                Margin = new Padding(1)
-            };
-            int capturedIndex = i;
-            btn.Click += (s, e) =>
-            {
-                // 在光标位置插入表情
-                int selStart = _inputBox.SelectionStart;
-                _inputBox.Text = _inputBox.Text.Insert(selStart, emojiList[capturedIndex]);
-                _inputBox.SelectionStart = selStart + emojiList[capturedIndex].Length;
-                _inputBox.Focus();
-                _emojiPanel.Visible = false;
-            };
-            btn.MouseEnter += (s, e) => btn.BackColor = Color.FromArgb(232, 245, 233);
-            btn.MouseLeave += (s, e) => btn.BackColor = Color.White;
-            _emojiPanel.Controls.Add(btn);
-        }
-        Controls.Add(_emojiPanel);
-        _emojiPanel.BringToFront();
+            Text = "😀 表情",
+            Font = new Font("微软雅黑", 9, FontStyle.Bold),
+            ForeColor = Color.FromArgb(80, 80, 80),
+            Location = new Point(8, 5),
+            AutoSize = true
+        };
+        _emojiContainer.Controls.Add(emojiTitle);
+
+        // 关闭按钮（右上角）
+        var closeBtn = new Button
+        {
+            Text = "×",
+            Size = new Size(20, 20),
+            Location = new Point(_emojiContainer.Width - 24, 3),
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = { BorderSize = 0 },
+            Font = new Font("微软雅黑", 10, FontStyle.Bold),
+            ForeColor = Color.Gray,
+            BackColor = Color.White,
+            Cursor = Cursors.Hand,
+            TabStop = false
+        };
+        closeBtn.Click += (s, e) => _emojiContainer.Visible = false;
+        _emojiContainer.Controls.Add(closeBtn);
+
+        // 分隔线
+        var sepLine = new Label
+        {
+            Width = _emojiContainer.Width - 10,
+            Height = 1,
+            BackColor = Color.FromArgb(220, 220, 220),
+            Location = new Point(5, 26)
+        };
+        _emojiContainer.Controls.Add(sepLine);
+
+        // 表情网格
+        _emojiPanel = new FlowLayoutPanel
+        {
+            Location = new Point(3, 29),
+            Size = new Size(_emojiContainer.Width - 6, _emojiContainer.Height - 33),
+            BackColor = Color.White,
+            AutoScroll = true
+        };
+        _emojiContainer.Controls.Add(_emojiPanel);
+
+        Controls.Add(_emojiContainer);
+        _emojiContainer.BringToFront();
+
+        // 分组：笑脸与人物
+        AddEmojiGroup("😀 笑脸",
+            "😀","😃","😄","😁","😆","😅","🤣","😂",
+            "🙂","🙃","😊","😇","🥰","😍","🤩","😘",
+            "😗","😚","😋","😛","😜","🤪","😝","🤑",
+            "🤗","🤭","🫢","🫣","🤫","🤔","🫡","🤐",
+            "😐","😑","😶","🫥","😏","😒","🙄","😬",
+            "😮","😯","😲","😳","🥺","😢","😭","😤",
+            "😠","😡","🤬","😈","👿","💀","☠️","💩",
+            "🤡","👹","👺","👻","👽","🤖","😺","😸",
+            "😹","😻","😼","😽","🙀","😿","😾");
+
+        // 分组：手势与庆祝
+        AddEmojiGroup("👍 手势",
+            "👍","👎","👌","✌️","🤞","🤟","🤘","🤙",
+            "👋","🤚","🖐️","✋","🫸","🫷","👆","👇",
+            "👈","👉","🖕","🤏","👊","✊","🤛","🤜",
+            "👏","🙌","🫶","👐","🤲","🤝","🙏","💪",
+            "🦵","🦶","👂","👃","🧠","🫀","👁️","👀",
+            "👅","👄","🦷","🫦");
+
+        // 分组：心形与符号
+        AddEmojiGroup("❤️ 符号",
+            "❤️","🧡","💛","💚","💙","💜","🖤","🤍",
+            "🤎","💔","❣️","💕","💞","💓","💗","💖",
+            "💘","💝","💟","☮️","✝️","☪️","🕉️","☸️",
+            "✡️","🔯","🕎","☯️","🆔","🆕","🆖","🆗",
+            "🆙","🆒","🆓","㊗️","㊙️","🈺","🈵","🔴",
+            "🟠","🟡","🟢","🔵","🟣","🟤","⚫","⚪",
+            "✅","❌","❓","❗","‼️","⁉️","➕","➖",
+            "➗","♾️","💲","💱","🔁","🔂","▶️","⏩",
+            "⏸️","⏹️","⏺️","🔄","🔃","🎦","🔞","♻️",
+            "💯","🔥","⭐","🌟","✨","💫","💥","🌈");
+
+        // 分组：物品与庆祝
+        AddEmojiGroup("🎉 物品",
+            "💡","🔦","🏮","🪔","📖","📕","📗","📘",
+            "📙","📚","📓","📔","📒","📃","📜","📄",
+            "📰","🗞️","📑","🔖","🏷️","💰","💴","💵",
+            "💶","💷","💸","💳","🧾","✉️","📧","📨",
+            "📩","📤","📥","📦","📪","📫","📬","📭",
+            "📮","🗳️","✏️","✒️","🖊️","🖋️","🖌️","🖍️",
+            "📝","📁","📂","🗂️","📅","📆","🗑️","🪜",
+            "🔗","⛓️","🧰","🛠️","🔧","🔨","⚒️","🪛",
+            "🔩","⚙️","🧲","💣","🧨","🎯","🎯","🎱",
+            "🎮","🎰","🎲","♠️","♥️","♦️","♣️","🃏",
+            "🎴","🀄","🎭","🎨","🎬","🎤","🎧","🎼",
+            "🎵","🎶","🎙️","🎚️","🎛️","📻","🎷","🪗",
+            "🎸","🎺","🎻","🥁","🪘","📯","🎉","🎊",
+            "🎈","🎁","🎀","🪄","🪅","🎏","🎐","🎓",
+            "🎒","📿","💎","🔮","🪷","🪴","🕯️","🪶");
+
+        // 分组：动物与自然
+        AddEmojiGroup("🐶 动物",
+            "🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼",
+            "🐨","🐸","🦁","🐯","🐮","🐷","🐗","🐵",
+            "🐒","🦍","🦧","🐔","🐧","🐦","🐤","🐣",
+            "🐥","🦆","🦅","🦉","🦇","🐺","🐗","🐴",
+            "🦄","🐝","🪱","🐛","🦋","🐌","🐞","🐜",
+            "🪰","🪲","🪳","🦟","🦗","🕷️","🦂","🐢",
+            "🐍","🦎","🦖","🦕","🐙","🦑","🦐","🦞",
+            "🦀","🐡","🐠","🐟","🐬","🐳","🐋","🦈",
+            "🌹","🌸","🌺","🌻","🌷","🌱","🌿","🍀",
+            "🌵","🎄","🌲","🌳","🌴","🌾","🍁","🍂",
+            "🍃","🌍","🌎","🌏","🌋","🏔️","⛰️","🏝️");
+
+        // 分组：食物与饮料
+        AddEmojiGroup("🍔 食物",
+            "🍇","🍈","🍉","🍊","🍋","🍌","🍍","🥭",
+            "🍎","🍏","🍐","🍑","🍒","🍓","🫐","🥝",
+            "🍅","🫒","🥥","🥑","🍆","🥔","🥕","🌽",
+            "🌶️","🫑","🥒","🥬","🧄","🧅","🍄","🥜",
+            "🌰","🍞","🥐","🥖","🫓","🧇","🥞","🧀",
+            "🍖","🍗","🥩","🥓","🍔","🍟","🍕","🌭",
+            "🥪","🌮","🌯","🫔","🥙","🧆","🥚","🍳",
+            "🥘","🍲","🫕","🥣","🥗","🍿","🧈","🧂",
+            "🥫","🍱","🍘","🍙","🍚","🍛","🍜","🍝",
+            "🍠","🍢","🍣","🍤","🍥","🥮","🍡","🥟",
+            "🦪","🍦","🍧","🍨","🍩","🍪","🎂","🍰",
+            "🧁","🥧","🍫","🍬","🍭","🍮","🍯","🍼",
+            "🥛","☕","🫖","🍵","🍶","🍾","🍷","🍸",
+            "🍹","🍺","🍻","🥂","🥃","🫙","🥤","🧃",
+            "🧊");
 
         // ======== 回调注册 ========
         _client.OnMessageReceived += OnMessage;
@@ -385,13 +474,58 @@ public class ChatForm : Form
         Point formScreen = PointToScreen(Point.Empty);
 
         int panelX = 5;
-        int panelY = inputScreen.Y - formScreen.Y - _emojiPanel.Height - 5;
+        int panelY = inputScreen.Y - formScreen.Y - _emojiContainer.Height - 5;
         if (panelY < 30) panelY = 30; // 防止超出顶部
 
-        _emojiPanel.Location = new Point(panelX, panelY);
-        _emojiPanel.Visible = !_emojiPanel.Visible;
-        if (_emojiPanel.Visible)
-            _emojiPanel.Focus();
+        _emojiContainer.Location = new Point(panelX, panelY);
+        _emojiContainer.Visible = !_emojiContainer.Visible;
+        if (_emojiContainer.Visible)
+            _emojiContainer.Focus();
+    }
+
+    // ==========================================================
+    // 添加一组表情到面板（含分类标题）
+    // ==========================================================
+    private void AddEmojiGroup(string groupName, params string[] emojis)
+    {
+        // 分类标题
+        var groupLabel = new Label
+        {
+            Text = groupName,
+            Font = new Font("微软雅黑", 8, FontStyle.Bold),
+            ForeColor = Color.FromArgb(120, 120, 120),
+            AutoSize = true,
+            Margin = new Padding(4, 6, _emojiPanel.Width, 2),
+            BackColor = Color.Transparent
+        };
+        _emojiPanel.Controls.Add(groupLabel);
+
+        foreach (var emoji in emojis)
+        {
+            var btn = new Button
+            {
+                Text = emoji,
+                Size = new Size(40, 40),
+                FlatStyle = FlatStyle.Flat,
+                FlatAppearance = { BorderSize = 0 },
+                Font = new Font("Segoe UI Emoji", 18),
+                BackColor = Color.White,
+                Cursor = Cursors.Hand,
+                Margin = new Padding(1)
+            };
+            string capturedEmoji = emoji;
+            btn.Click += (s, e) =>
+            {
+                int start = _inputBox.SelectionStart;
+                _inputBox.Text = _inputBox.Text.Insert(start, capturedEmoji);
+                _inputBox.SelectionStart = start + capturedEmoji.Length;
+                _inputBox.Focus();
+                _emojiContainer.Visible = false;
+            };
+            btn.MouseEnter += (s, e) => btn.BackColor = Color.FromArgb(232, 245, 233);
+            btn.MouseLeave += (s, e) => btn.BackColor = Color.White;
+            _emojiPanel.Controls.Add(btn);
+        }
     }
 
     // ==========================================================
