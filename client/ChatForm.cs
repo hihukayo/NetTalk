@@ -17,6 +17,8 @@ public class ChatForm : Form
     private readonly System.Windows.Forms.Timer _heartbeatTimer;
     private readonly FlowLayoutPanel _emojiPanel;
     private readonly Panel _emojiContainer;
+    private readonly ListBox _atListBox;
+    private readonly Panel _atContainer;
     private readonly string _logPath;
 
     // 表情快捷词典
@@ -153,7 +155,8 @@ public class ChatForm : Form
         {
             if (e.KeyCode == Keys.Escape)
             {
-                _emojiPanel.Visible = false;
+                _emojiContainer.Visible = false;
+                _atContainer.Visible = false;
             }
             if (e.KeyCode == Keys.Enter && e.Modifiers != Keys.Shift)
             {
@@ -363,6 +366,62 @@ public class ChatForm : Form
             "🍹","🍺","🍻","🥂","🥃","🫙","🥤","🧃",
             "🧊");
 
+        // ====== @ 用户弹出列表 ======
+        _atContainer = new Panel
+        {
+            Size = new Size(160, 180),
+            BackColor = Color.White,
+            BorderStyle = BorderStyle.FixedSingle,
+            Visible = false
+        };
+
+        var atTitle = new Label
+        {
+            Text = "👥 选择用户",
+            Font = new Font("微软雅黑", 8, FontStyle.Bold),
+            ForeColor = Color.FromArgb(120, 120, 120),
+            Location = new Point(6, 4),
+            AutoSize = true
+        };
+        _atContainer.Controls.Add(atTitle);
+
+        _atListBox = new ListBox
+        {
+            Location = new Point(4, 20),
+            Size = new Size(_atContainer.Width - 8, _atContainer.Height - 24),
+            BorderStyle = BorderStyle.None,
+            Font = new Font("微软雅黑", 11),
+            BackColor = Color.White,
+            ForeColor = Color.FromArgb(51, 51, 51)
+        };
+        _atListBox.SelectedIndexChanged += (s, e) =>
+        {
+            if (_atListBox.SelectedItem == null) return;
+            InsertAtUser(_atListBox.SelectedItem.ToString()!);
+        };
+        _atListBox.DoubleClick += (s, e) =>
+        {
+            if (_atListBox.SelectedItem == null) return;
+            InsertAtUser(_atListBox.SelectedItem.ToString()!);
+        };
+        // 回车选中
+        _atListBox.KeyDown += (s, e) =>
+        {
+            if (e.KeyCode == Keys.Enter && _atListBox.SelectedItem != null)
+            {
+                InsertAtUser(_atListBox.SelectedItem.ToString()!);
+                e.SuppressKeyPress = true;
+            }
+        };
+        _atContainer.Controls.Add(_atListBox);
+        Controls.Add(_atContainer);
+
+        // 输入框文字变化时检测 @
+        _inputBox.TextChanged += (s, e) => CheckAtMention();
+
+        // 用列表的 LostFocus 关闭面板
+        _atContainer.LostFocus += (s, e) => _atContainer.Visible = false;
+
         _client.OnMessageReceived += OnMessage;
         _client.OnDisconnected += OnDisconnected;
 
@@ -467,10 +526,104 @@ public class ChatForm : Form
         int panelY = inputScreen.Y - formScreen.Y - _emojiContainer.Height - 5;
         if (panelY < 30) panelY = 30; // 防止超出顶部
 
+        _atContainer.Visible = false; // 关闭 @ 面板
         _emojiContainer.Location = new Point(panelX, panelY);
         _emojiContainer.Visible = !_emojiContainer.Visible;
         if (_emojiContainer.Visible)
             _emojiContainer.Focus();
+    }
+
+    // 检测输入框中的 @ 并弹出用户列表
+    private void CheckAtMention()
+    {
+        int pos = _inputBox.SelectionStart;
+        string text = _inputBox.Text;
+
+        // 从光标往前找最后一个 @
+        int atIdx = -1;
+        for (int i = pos - 1; i >= 0; i--)
+        {
+            if (text[i] == '@')
+            {
+                // @ 前面必须是空格或开头
+                if (i == 0 || text[i - 1] == ' ')
+                {
+                    atIdx = i;
+                    break;
+                }
+            }
+            else if (text[i] == ' ')
+                break; // 遇到空格停止
+        }
+
+        if (atIdx < 0)
+        {
+            _atContainer.Visible = false;
+            return;
+        }
+
+        // 获取 @ 后的过滤文字
+        string filter = text[(atIdx + 1)..pos].Trim();
+        _atListBox.Items.Clear();
+
+        // 从 _userMenu 获取在线用户列表
+        foreach (ToolStripItem item in _userMenu.Items)
+        {
+            string name = item.Text;
+            if (name != _username && (string.IsNullOrEmpty(filter) ||
+                name.StartsWith(filter, StringComparison.OrdinalIgnoreCase)))
+                _atListBox.Items.Add(name);
+        }
+
+        if (_atListBox.Items.Count == 0)
+        {
+            _atContainer.Visible = false;
+            return;
+        }
+
+        // 定位面板在输入框上方
+        Point inputScreen = _inputBox.PointToScreen(new Point(
+            _inputBox.GetPositionFromCharIndex(atIdx).X, 0));
+        Point formScreen = PointToScreen(Point.Empty);
+
+        int panelX = Math.Max(5, inputScreen.X - formScreen.X);
+        int panelY = inputScreen.Y - formScreen.Y - _atContainer.Height - 5;
+        if (panelY < 30) panelY = 30;
+
+        _atContainer.Location = new Point(panelX, panelY);
+        _atContainer.Visible = true;
+        _atContainer.BringToFront();
+        _atListBox.SelectedIndex = 0;
+    }
+
+    // 插入 @用户 到输入框
+    private void InsertAtUser(string user)
+    {
+        int pos = _inputBox.SelectionStart;
+        string text = _inputBox.Text;
+
+        // 找光标前的 @ 位置
+        int atIdx = -1;
+        for (int i = pos - 1; i >= 0; i--)
+        {
+            if (text[i] == '@' && (i == 0 || text[i - 1] == ' '))
+            {
+                atIdx = i;
+                break;
+            }
+            if (text[i] == ' ') break;
+        }
+
+        if (atIdx >= 0)
+        {
+            string before = text[..atIdx];
+            string after = text[pos..];
+            _inputBox.Text = before + "@" + user + " " + after;
+            _inputBox.SelectionStart = atIdx + user.Length + 2;
+        }
+
+        _atContainer.Visible = false;
+        _inputBox.Focus();
     }
 
     // 添加一组表情到面板（含分类标题）
@@ -624,13 +777,11 @@ public class ChatForm : Form
         _messageBox.SelectionColor = Color.Gray;
         _messageBox.SelectionFont = new Font("微软雅黑", 10);
 
-        // 内容（用默认字体，系统自动回退渲染 Emoji）
+        // 内容（@用户名 显示为蓝色）
         try
         {
             int contentStart = timeStart + time.Length + 1;
-            _messageBox.Select(contentStart, content.Length);
-            _messageBox.SelectionColor = contentColor ?? Color.FromArgb(51, 51, 51);
-            _messageBox.SelectionFont = new Font("微软雅黑", 12);
+            AppendColoredText(content, contentStart, contentColor ?? Color.FromArgb(51, 51, 51));
         }
         catch (Exception ex)
         {
@@ -650,6 +801,45 @@ public class ChatForm : Form
         _messageBox.SelectionBackColor = backColor;
         _messageBox.SelectionStart = _messageBox.TextLength;
         _messageBox.ScrollToCaret();
+    }
+
+    // 渲染内容（识别 @用户名 染成蓝色）
+    private void AppendColoredText(string text, int startOffset, Color defaultColor)
+    {
+        var atColor = Color.FromArgb(30, 120, 220); // 蓝色
+        int pos = 0;
+        while (pos < text.Length)
+        {
+            int atIdx = text.IndexOf('@', pos);
+            if (atIdx < 0 || atIdx == text.Length - 1)
+            {
+                // 剩余部分用默认颜色
+                _messageBox.Select(startOffset + pos, text.Length - pos);
+                _messageBox.SelectionColor = defaultColor;
+                _messageBox.SelectionFont = new Font("微软雅黑", 12);
+                break;
+            }
+
+            // @ 前面的文字
+            if (atIdx > pos)
+            {
+                _messageBox.Select(startOffset + pos, atIdx - pos);
+                _messageBox.SelectionColor = defaultColor;
+                _messageBox.SelectionFont = new Font("微软雅黑", 12);
+            }
+
+            // 找 @用户名 结束位置
+            int endIdx = atIdx + 1;
+            while (endIdx < text.Length && !char.IsWhiteSpace(text[endIdx]) && text[endIdx] != '/' && text[endIdx] != '，' && text[endIdx] != '。')
+                endIdx++;
+
+            // @用户名 染蓝色
+            _messageBox.Select(startOffset + atIdx, endIdx - atIdx);
+            _messageBox.SelectionColor = atColor;
+            _messageBox.SelectionFont = new Font("微软雅黑", 12, FontStyle.Bold);
+
+            pos = endIdx;
+        }
     }
 
     private void AppendSystem(string text)
