@@ -114,8 +114,8 @@ public class LoginForm : Form
         int startY = 70;
         int fieldWidth = 380;
         int rowH = 82;        // 每行高度
-        int labelY = 3;       // 标签距行顶
-        int boxY = 30;        // 输入框距行顶（比标签低很多，避免遮盖）
+        int labelY = -5;      // 标签距行顶
+        int boxY = 25;        // 输入框距行顶
 
         // 服务器
         var lblIp = new Label

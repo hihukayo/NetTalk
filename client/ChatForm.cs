@@ -17,6 +17,7 @@ public class ChatForm : Form
     private readonly System.Windows.Forms.Timer _heartbeatTimer;
     private readonly FlowLayoutPanel _emojiPanel;
     private readonly Panel _emojiContainer;
+    private readonly string _logPath;
 
     // 表情快捷词典
     private static readonly Dictionary<string, string> EmojiMap = new()
@@ -35,6 +36,7 @@ public class ChatForm : Form
     {
         _client = client;
         _username = username;
+        _logPath = Path.Combine(AppContext.BaseDirectory, $"聊天记录_{DateTime.Now:yyyy-MM-dd}.txt");
 
         Text = $"💬 TCP 聊天室 - {username}";
         Size = new Size(1200, 750);
@@ -47,7 +49,6 @@ public class ChatForm : Form
             _client.Disconnect();
         };
 
-        // ======== 顶部栏 ========
         var topBar = new Panel { Height = 48, BackColor = Color.FromArgb(7, 193, 96), Dock = DockStyle.Top };
 
         var titleLabel = new Label
@@ -114,8 +115,14 @@ public class ChatForm : Form
 
         Controls.Add(topBar);
 
-        // ======== 主体区域 ========
-        var mainPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(5, 20, 5, 5) };
+        // 绿色栏底部分隔线
+        var separator = new Panel
+        {
+            Dock = DockStyle.Top, Height = 2, BackColor = Color.FromArgb(5, 160, 80)
+        };
+        Controls.Add(separator);
+
+        var mainPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(5, 45, 5, 5), BackColor = Color.FromArgb(245, 245, 245) };
 
         _messageBox = new RichTextBox
         {
@@ -128,16 +135,16 @@ public class ChatForm : Form
         };
         mainPanel.Controls.Add(_messageBox);
 
-        // 输入区（自动增高）
-        var bottomPanel = new Panel { Dock = DockStyle.Bottom, Height = 80, Padding = new Padding(5) };
-        const int inputMinH = 35, inputMaxH = 180;
+        // 输入区（固定高度，可滚动查看上文）
+        var bottomPanel = new Panel { Dock = DockStyle.Bottom, Height = 120, Padding = new Padding(5) };
+        const int inputH = 75;
 
         _inputBox = new TextBox
         {
             Multiline = true,
             ScrollBars = ScrollBars.Vertical,
             Location = new Point(0, 0),
-            Size = new Size(600, inputMinH),
+            Size = new Size(600, inputH),
             Font = new Font("微软雅黑", 11),
             BorderStyle = BorderStyle.Fixed3D,
             Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right
@@ -156,29 +163,15 @@ public class ChatForm : Form
         };
         bottomPanel.Controls.Add(_inputBox);
 
-        // 输入框下方的私聊提示
         var hintLabel = new Label
         {
             Text = "💡 /w 用户名 消息 → 私聊　　/emoji 名称 → 发表情",
             ForeColor = Color.Gray,
             Font = new Font("微软雅黑", 8),
-            Location = new Point(5, 38),
+            Location = new Point(5, inputH + 3),
             AutoSize = true
         };
         bottomPanel.Controls.Add(hintLabel);
-
-        // 自动增高输入框
-        _inputBox.TextChanged += (s, e) =>
-        {
-            int lineCount = _inputBox.GetLineFromCharIndex(_inputBox.TextLength) + 1;
-            int newH = Math.Clamp(lineCount * 22, inputMinH, inputMaxH);
-            if (newH != _inputBox.Height)
-            {
-                _inputBox.Height = newH;
-                bottomPanel.Height = newH + 30;
-            }
-            hintLabel.Location = new Point(5, newH + 3);
-        };
 
         _sendBtn = new Button
         {
@@ -201,7 +194,6 @@ public class ChatForm : Form
         mainPanel.Controls.Add(bottomPanel);
         Controls.Add(mainPanel);
 
-        // ======== 底栏 ========
         var bottomBar = new Panel { BackColor = Color.FromArgb(232, 245, 233), Dock = DockStyle.Bottom, Height = 28 };
 
         _statusLabel = new Label
@@ -216,7 +208,6 @@ public class ChatForm : Form
 
         Controls.Add(bottomBar);
 
-        // ======== 心跳 ========
         _heartbeatTimer = new System.Windows.Forms.Timer { Interval = 30000 };
         _heartbeatTimer.Tick += (s, e) =>
         {
@@ -225,7 +216,6 @@ public class ChatForm : Form
         };
         _heartbeatTimer.Start();
 
-        // ======== 表情弹出面板（类似 Win + .）========
         _emojiContainer = new Panel
         {
             Size = new Size(440, 300),
@@ -239,24 +229,26 @@ public class ChatForm : Form
             Text = "😀 表情",
             Font = new Font("微软雅黑", 9, FontStyle.Bold),
             ForeColor = Color.FromArgb(80, 80, 80),
-            Location = new Point(8, 5),
+            Location = new Point(8, 6),
             AutoSize = true
         };
         _emojiContainer.Controls.Add(emojiTitle);
 
-        // 关闭按钮（红色 ✕）
+        // 关闭按钮（红色 ✕，右上角）
         var closeBtn = new Button
         {
-            Text = "✕",
-            Size = new Size(18, 18),
-            Location = new Point(_emojiContainer.Width - 24, 5),
+            Text = "ｘ",
+            Size = new Size(18, 30),
+            Location = new Point(_emojiContainer.Width - 22, 1),
             FlatStyle = FlatStyle.Flat,
             FlatAppearance = { BorderSize = 0 },
-            Font = new Font("微软雅黑", 10, FontStyle.Bold),
+            Font = new Font("微软雅黑", 9, FontStyle.Bold),
             ForeColor = Color.FromArgb(220, 50, 50),
             BackColor = Color.White,
             Cursor = Cursors.Hand,
-            TabStop = false
+            TabStop = false,
+            Padding = new Padding(0),
+            Margin = new Padding(0)
         };
         closeBtn.MouseEnter += (s, e) => closeBtn.BackColor = Color.FromArgb(255, 235, 235);
         closeBtn.MouseLeave += (s, e) => closeBtn.BackColor = Color.White;
@@ -270,15 +262,15 @@ public class ChatForm : Form
             Width = _emojiContainer.Width - 10,
             Height = 1,
             BackColor = Color.FromArgb(220, 220, 220),
-            Location = new Point(5, 26)
+            Location = new Point(5, 34)
         };
         _emojiContainer.Controls.Add(sepLine);
 
         // 表情网格
         _emojiPanel = new FlowLayoutPanel
         {
-            Location = new Point(3, 29),
-            Size = new Size(_emojiContainer.Width - 6, _emojiContainer.Height - 33),
+            Location = new Point(3, 37),
+            Size = new Size(_emojiContainer.Width - 6, _emojiContainer.Height - 40),
             BackColor = Color.White,
             AutoScroll = true
         };
@@ -371,7 +363,6 @@ public class ChatForm : Form
             "🍹","🍺","🍻","🥂","🥃","🫙","🥤","🧃",
             "🧊");
 
-        // ======== 回调注册 ========
         _client.OnMessageReceived += OnMessage;
         _client.OnDisconnected += OnDisconnected;
 
@@ -379,7 +370,11 @@ public class ChatForm : Form
         UpdateUserList(lastUserList ?? _username);
 
         // 窗体显示后再输出加入消息（构造时 RichTextBox 可能未完成初始化）
-        this.Shown += (s, e) => AppendCentered($"🎉 {_username} 加入了聊天室", Color.Gray);
+        this.Shown += (s, e) =>
+        {
+            AppendCentered($"🎉 {_username} 加入了聊天室", Color.Gray);
+            SaveToLog($"🎉 {_username} 加入了聊天室");
+        };
 
         Resize += (s, e) =>
         {
@@ -389,47 +384,39 @@ public class ChatForm : Form
         };
     }
 
-    // ==========================================================
     // 发送消息
-    // ==========================================================
     private void SendMessage()
     {
-        string content = _inputBox.Text.Trim();
+        string rawText = _inputBox.Text;
+        string content = rawText.Trim();
         if (string.IsNullOrEmpty(content)) return;
 
-        // /emoji 命令 — 弹出表情面板 或 插入指定表情
-        if (content.StartsWith("/emoji"))
+        // /emoji 命令 — 在任意位置输入都生效
+        int emojiIndex = content.IndexOf("/emoji");
+        if (emojiIndex >= 0)
         {
-            string rest = content[6..].Trim();
+            string rest = content[(emojiIndex + 6)..].TrimStart();
             if (string.IsNullOrEmpty(rest))
             {
-                // /emoji → 弹出表情面板
-                _inputBox.Clear();
+                // /emoji → 保留前面已输入的文字，弹出表情面板
+                _inputBox.Text = content[..emojiIndex];
+                _inputBox.SelectionStart = _inputBox.Text.Length;
                 ShowEmojiPicker();
             }
             else
             {
-                // /emoji 名称 → 替换命令文字为实际表情
-                if (EmojiMap.TryGetValue(rest, out var emoji))
+                // /emoji 名称 → 替换为实际表情
+                string name = rest.Split(' ')[0];
+                if (EmojiMap.TryGetValue(name, out var emoji))
                 {
-                    int selStart = _inputBox.SelectionStart;
-                    string before = _inputBox.Text[..selStart];
-                    int cmdStart = before.LastIndexOf("/emoji", StringComparison.Ordinal);
-                    if (cmdStart >= 0)
-                    {
-                        _inputBox.Text = _inputBox.Text.Remove(cmdStart, selStart - cmdStart);
-                        _inputBox.Text = _inputBox.Text.Insert(cmdStart, emoji);
-                        _inputBox.SelectionStart = cmdStart + emoji.Length;
-                    }
-                    else
-                    {
-                        _inputBox.Text = _inputBox.Text.Insert(selStart, emoji);
-                        _inputBox.SelectionStart = selStart + emoji.Length;
-                    }
+                    string before = content[..emojiIndex];
+                    string after = rest[name.Length..].TrimStart();
+                    _inputBox.Text = before + emoji + (after.Length > 0 ? " " + after : "");
+                    _inputBox.SelectionStart = _inputBox.Text.Length;
                 }
                 else
                 {
-                    AppendCentered($"⚠️ 未知表情: {rest}", Color.Gray);
+                    AppendCentered($"⚠️ 未知表情: {name}", Color.Gray);
                 }
             }
             _inputBox.Focus();
@@ -452,6 +439,7 @@ public class ChatForm : Form
                 if (!string.IsNullOrEmpty(msg))
                 {
                     _client.Send(new Message { Type = MessageType.PRIVATE, Args = { target, msg } });
+                    SaveToLog($"💌 私聊 我 → {target}: {msg}");
                 }
             }
             else
@@ -461,15 +449,14 @@ public class ChatForm : Form
         {
             // 群聊
             _client.Send(new Message { Type = MessageType.MSG, Args = { content } });
+            SaveToLog($"{_username}: {content}");
         }
 
         _inputBox.Clear();
         _inputBox.Focus();
     }
 
-    // ==========================================================
     // 弹出表情面板（在输入框上方）
-    // ==========================================================
     private void ShowEmojiPicker()
     {
         // 定位在输入框正上方（用屏幕坐标换算，不受布局嵌套影响）
@@ -486,9 +473,7 @@ public class ChatForm : Form
             _emojiContainer.Focus();
     }
 
-    // ==========================================================
     // 添加一组表情到面板（含分类标题）
-    // ==========================================================
     private void AddEmojiGroup(string groupName, params string[] emojis)
     {
         // 分类标题
@@ -531,12 +516,8 @@ public class ChatForm : Form
         }
     }
 
-    // ==========================================================
     // 双击用户 → 私聊
-    // ==========================================================
-    // ==========================================================
     // 收到消息
-    // ==========================================================
     private void OnMessage(Message msg)
     {
         this.Invoke(() =>
@@ -548,6 +529,7 @@ public class ChatForm : Form
                     {
                         bool isMe = msg.Args[0] == _username;
                         AppendBubble(msg.Args[0], msg.Args[1], isMe);
+                        if (!isMe) SaveToLog($"{msg.Args[0]}: {msg.Args[1]}");
                     }
                     break;
 
@@ -555,20 +537,33 @@ public class ChatForm : Form
                     if (msg.Args.Count >= 2)
                     {
                         if (msg.Args[0].StartsWith("[私聊"))
-                            AppendCentered($"💌 我 → {msg.Args[0].Substring(5).TrimEnd(']')}: {msg.Args[1]}", Color.FromArgb(7, 193, 96));
+                        {
+                            string target = msg.Args[0].Substring(5).TrimEnd(']');
+                            AppendCentered($"💌 我 → {target}: {msg.Args[1]}", Color.FromArgb(7, 193, 96));
+                            SaveToLog($"💌 私聊 我 → {target}: {msg.Args[1]}");
+                        }
                         else
+                        {
                             AppendCentered($"💌 {msg.Args[0]} 私信你: {msg.Args[1]}", Color.Gray);
+                            SaveToLog($"💌 私聊 {msg.Args[0]} → 我: {msg.Args[1]}");
+                        }
                     }
                     break;
 
                 case MessageType.JOINED:
                     if (msg.Args.Count > 0)
+                    {
                         AppendCentered($"🎉 {msg.Args[0]} 加入了聊天室", Color.Gray);
+                        SaveToLog($"🎉 {msg.Args[0]} 加入了聊天室");
+                    }
                     break;
 
                 case MessageType.LEFT:
                     if (msg.Args.Count > 0)
+                    {
                         AppendCentered($"👋 {msg.Args[0]} 离开了聊天室", Color.Gray);
+                        SaveToLog($"👋 {msg.Args[0]} 离开了聊天室");
+                    }
                     break;
 
                 case MessageType.USERS:
@@ -577,15 +572,23 @@ public class ChatForm : Form
 
                 case MessageType.ERR:
                     if (msg.Args.Count > 0)
+                    {
                         AppendCentered($"⚠️ {msg.Args[0]}", Color.FromArgb(198, 40, 40));
+                        SaveToLog($"⚠️ {msg.Args[0]}");
+                    }
                     break;
             }
         });
     }
 
-    // ==========================================================
+    // 保存到聊天记录文件
+    private void SaveToLog(string text)
+    {
+        try { File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] {text}\n", System.Text.Encoding.UTF8); }
+        catch { }
+    }
+
     // 断开连接
-    // ==========================================================
     private void OnDisconnected()
     {
         this.Invoke(() =>
@@ -600,9 +603,7 @@ public class ChatForm : Form
         });
     }
 
-    // ==========================================================
     // 消息显示
-    // ==========================================================
     private void AppendBubble(string sender, string content, bool isMe, Color? contentColor = null)
     {
         string time = DateTime.Now.ToString("HH:mm:ss");
@@ -666,9 +667,7 @@ public class ChatForm : Form
         try { _messageBox.ScrollToCaret(); } catch { }
     }
 
-    // ==========================================================
     // 居中单行提示（系统消息、私信、错误）
-    // ==========================================================
     private void AppendCentered(string text, Color color)
     {
         try
@@ -689,9 +688,7 @@ public class ChatForm : Form
         }
     }
 
-    // ==========================================================
     // 更新用户列表
-    // ==========================================================
     private void UpdateUserList(string userData)
     {
         _userMenu.Items.Clear();
