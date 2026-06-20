@@ -387,7 +387,7 @@ private:
         // 也回显给发送者（让他看到自己发了什么）
         Message echoMsg;
         echoMsg.type = MessageType::PRIVATE;
-        echoMsg.args = {"[私聊 -> " + target + "]", content};
+        echoMsg.args = {"[私聊]" + target, content};
         session->sendMessage(echoMsg);
 
         std::cout << "[私聊] " << session->username() << " → "

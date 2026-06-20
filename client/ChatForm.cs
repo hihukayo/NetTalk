@@ -742,7 +742,7 @@ public class ChatForm : Form
                     {
                         if (msg.Args[0].StartsWith("[私聊"))
                         {
-                            string target = msg.Args[0].Substring(5).TrimEnd(']');
+                            string target = msg.Args[0].Substring(msg.Args[0].IndexOf(']') + 1);
                             AppendCentered($"💌 我 私信 {target}: {msg.Args[1]}", Color.FromArgb(7, 193, 96));
                             SaveToLog($"💌 私聊 我 -> {target}: {msg.Args[1]}");
                         }
