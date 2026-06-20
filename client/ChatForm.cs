@@ -742,9 +742,19 @@ public class ChatForm : Form
                     {
                         if (msg.Args[0].StartsWith("[私聊"))
                         {
-                            string target = msg.Args[0].Substring(msg.Args[0].IndexOf(']') + 1);
-                            string displayTarget = target == _username ? "自己" : target;
-                            AppendCentered($"💌 我私信{displayTarget}: {msg.Args[1]}", Color.FromArgb(7, 193, 96));
+                            string raw = msg.Args[0];
+                            string target;
+                            // 兼容旧格式 "[私聊 -> hihukayo]" 和新格式 "[私聊]hihukayo"
+                            int arrow = raw.LastIndexOf('>');
+                            if (arrow >= 0)
+                                target = raw.Substring(arrow + 1).TrimEnd(']').Trim();
+                            else
+                            {
+                                int bracket = raw.LastIndexOf(']');
+                                target = bracket >= 0 && bracket < raw.Length - 1
+                                    ? raw.Substring(bracket + 1) : "";
+                            }
+                            AppendCentered($"💌 我私信{target}: {msg.Args[1]}", Color.FromArgb(7, 193, 96));
                             SaveToLog($"💌 私聊 我 -> {target}: {msg.Args[1]}");
                         }
                         else
