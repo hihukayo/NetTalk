@@ -122,7 +122,7 @@ public class ChatForm : Form
             Multiline = true,
             ScrollBars = ScrollBars.Vertical,
             Location = new Point(0, 0),
-            Size = new Size(600, inputMinH),
+            Size = new Size(530, inputMinH),
             Font = new Font("微软雅黑", 11),
             BorderStyle = BorderStyle.Fixed3D,
             Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right
@@ -161,11 +161,87 @@ public class ChatForm : Form
             hintLabel.Location = new Point(5, newH + 3);
         };
 
+        // ======== 表情按钮 ========
+        var emojiBtn = new Button
+        {
+            Text = "😊",
+            Size = new Size(40, 35),
+            Location = new Point(535, 0),
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = { BorderSize = 0 },
+            Font = new Font("微软雅黑", 14),
+            BackColor = Color.White,
+            Cursor = Cursors.Hand,
+            Anchor = AnchorStyles.Top | AnchorStyles.Right
+        };
+        bottomPanel.Controls.Add(emojiBtn);
+
+        // 表情选择面板（默认隐藏）
+        var emojiPanel = new FlowLayoutPanel
+        {
+            Size = new Size(330, 168),
+            BackColor = Color.White,
+            BorderStyle = BorderStyle.FixedSingle,
+            Visible = false
+        };
+
+        string[] emojis = {
+            "😀","😂","🤣","😊","😍","🥰","😎","🤩",
+            "😜","🤪","😅","😁","🥺","😤","😱","🤗",
+            "🤔","😴","🥳","🙏","👍","👎","👏","🙌",
+            "💪","🔥","⭐","❤️","💔","💯","🎉","🎊",
+            "🎈","🎁","✨","🌟","💡","📢","❓","❗"
+        };
+
+        foreach (var emoji in emojis)
+        {
+            var btn = new Button
+            {
+                Text = emoji,
+                Size = new Size(38, 38),
+                FlatStyle = FlatStyle.Flat,
+                FlatAppearance = { BorderSize = 0 },
+                Font = new Font("微软雅黑", 16),
+                BackColor = Color.White,
+                Cursor = Cursors.Hand
+            };
+            btn.Click += (s, e) =>
+            {
+                int selStart = _inputBox.SelectionStart;
+                _inputBox.Text = _inputBox.Text.Insert(selStart, btn.Text);
+                _inputBox.SelectionStart = selStart + btn.Text.Length;
+                _inputBox.Focus();
+                emojiPanel.Visible = false;
+            };
+            btn.MouseEnter += (s, e) => btn.BackColor = Color.FromArgb(240, 240, 240);
+            btn.MouseLeave += (s, e) => btn.BackColor = Color.White;
+            emojiPanel.Controls.Add(btn);
+        }
+        bottomPanel.Controls.Add(emojiPanel);
+
+        void ShowEmojiPicker(Button anchor)
+        {
+            emojiPanel.Visible = !emojiPanel.Visible;
+            if (emojiPanel.Visible)
+            {
+                emojiPanel.Location = new Point(
+                    Math.Max(0, anchor.Left - 120),
+                    anchor.Top - emojiPanel.Height - 2
+                );
+                emojiPanel.BringToFront();
+            }
+        }
+
+        emojiBtn.Click += (s, e) => ShowEmojiPicker(emojiBtn);
+
+        // 点击输入框时关闭表情面板
+        _inputBox.Click += (s, e) => emojiPanel.Visible = false;
+
         _sendBtn = new Button
         {
             Text = "发送",
             Size = new Size(70, 50),
-            Location = new Point(605, 0),
+            Location = new Point(580, 0),
             Anchor = AnchorStyles.Top | AnchorStyles.Right,
             BackColor = Color.White,
             ForeColor = Color.FromArgb(7, 193, 96),
@@ -176,7 +252,7 @@ public class ChatForm : Form
         };
         _sendBtn.MouseEnter += (s, e) => _sendBtn.BackColor = Color.FromArgb(232, 245, 233);
         _sendBtn.MouseLeave += (s, e) => _sendBtn.BackColor = Color.White;
-        _sendBtn.Click += (s, e) => SendMessage();
+        _sendBtn.Click += (s, e) => { SendMessage(); emojiPanel.Visible = false; };
         bottomPanel.Controls.Add(_sendBtn);
 
         mainPanel.Controls.Add(bottomPanel);
