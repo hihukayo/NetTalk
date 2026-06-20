@@ -15,6 +15,7 @@ public class ChatForm : Form
     private readonly Button _sendBtn;
     private readonly Button _logoutBtn;
     private readonly System.Windows.Forms.Timer _heartbeatTimer;
+    private readonly FlowLayoutPanel _emojiPanel;
 
     // 表情快捷词典
     private static readonly Dictionary<string, string> EmojiMap = new()
@@ -142,6 +143,10 @@ public class ChatForm : Form
         };
         _inputBox.KeyDown += (s, e) =>
         {
+            if (e.KeyCode == Keys.Escape)
+            {
+                _emojiPanel.Visible = false;
+            }
             if (e.KeyCode == Keys.Enter && e.Modifiers != Keys.Shift)
             {
                 e.SuppressKeyPress = true;
@@ -219,6 +224,61 @@ public class ChatForm : Form
         };
         _heartbeatTimer.Start();
 
+        // ======== 表情弹出面板（类似 Win + .）========
+        _emojiPanel = new FlowLayoutPanel
+        {
+            Size = new Size(380, 210),
+            BackColor = Color.White,
+            BorderStyle = BorderStyle.FixedSingle,
+            AutoScroll = true,
+            Visible = false
+        };
+
+        string[] emojiList = {
+            "😀","😃","😄","😁","😆","😅","🤣","😂",
+            "🙂","😊","😇","🥰","😍","🤩","😘","😗",
+            "😋","😛","😜","🤪","😝","🫠","😎","🤓",
+            "🥳","🥺","😢","😭","😤","😠","🤬","😱",
+            "👍","👎","👏","🙌","🤝","💪","✌️","🤞",
+            "❤️","🧡","💛","💚","💙","💜","🖤","💔",
+            "💯","🔥","⭐","🌟","✨","💡","🎯","🎉",
+            "🎊","🎈","🎁","🎀","🪄","🔮","💎","🌈",
+            "🌹","🌸","🌺","🌻","🌷","🌿","🍀","🌙",
+            "☀️","⛅","🌈","❄️","🔥","🌊","💦","✨",
+            "🐱","🐶","🐼","🐨","🐸","🦊","🐰","🐯",
+            "🍕","🍔","🌮","🍦","🍩","🍪","☕","🍺",
+        };
+
+        for (int i = 0; i < emojiList.Length; i++)
+        {
+            var btn = new Button
+            {
+                Text = emojiList[i],
+                Size = new Size(44, 44),
+                FlatStyle = FlatStyle.Flat,
+                FlatAppearance = { BorderSize = 0 },
+                Font = new Font("Segoe UI Emoji", 20),
+                BackColor = Color.White,
+                Cursor = Cursors.Hand,
+                Margin = new Padding(1)
+            };
+            int capturedIndex = i;
+            btn.Click += (s, e) =>
+            {
+                // 在光标位置插入表情
+                int selStart = _inputBox.SelectionStart;
+                _inputBox.Text = _inputBox.Text.Insert(selStart, emojiList[capturedIndex]);
+                _inputBox.SelectionStart = selStart + emojiList[capturedIndex].Length;
+                _inputBox.Focus();
+                _emojiPanel.Visible = false;
+            };
+            btn.MouseEnter += (s, e) => btn.BackColor = Color.FromArgb(232, 245, 233);
+            btn.MouseLeave += (s, e) => btn.BackColor = Color.White;
+            _emojiPanel.Controls.Add(btn);
+        }
+        Controls.Add(_emojiPanel);
+        _emojiPanel.BringToFront();
+
         // ======== 回调注册 ========
         _client.OnMessageReceived += OnMessage;
         _client.OnDisconnected += OnDisconnected;
@@ -245,29 +305,39 @@ public class ChatForm : Form
         string content = _inputBox.Text.Trim();
         if (string.IsNullOrEmpty(content)) return;
 
-        // /emoji 命令 — 显示或插入表情
+        // /emoji 命令 — 弹出表情面板 或 插入指定表情
         if (content.StartsWith("/emoji"))
         {
             string rest = content[6..].Trim();
             if (string.IsNullOrEmpty(rest))
             {
-                // 显示所有可用表情
-                var lines = new List<string> { "📖 可用表情（输入 :名称: 自动替换）:" };
-                foreach (var kv in EmojiMap)
-                    lines.Add($"  {kv.Value}  :{kv.Key}:");
-                AppendCentered(string.Join("\n", lines), Color.Gray);
+                // /emoji → 弹出表情面板
+                _inputBox.Clear();
+                ShowEmojiPicker();
             }
             else
             {
-                // 查找指定表情
+                // /emoji 名称 → 替换命令文字为实际表情
                 if (EmojiMap.TryGetValue(rest, out var emoji))
                 {
-                    _inputBox.Text = _inputBox.Text.Insert(_inputBox.SelectionStart, emoji);
-                    _inputBox.SelectionStart += emoji.Length;
+                    int selStart = _inputBox.SelectionStart;
+                    string before = _inputBox.Text[..selStart];
+                    int cmdStart = before.LastIndexOf("/emoji", StringComparison.Ordinal);
+                    if (cmdStart >= 0)
+                    {
+                        _inputBox.Text = _inputBox.Text.Remove(cmdStart, selStart - cmdStart);
+                        _inputBox.Text = _inputBox.Text.Insert(cmdStart, emoji);
+                        _inputBox.SelectionStart = cmdStart + emoji.Length;
+                    }
+                    else
+                    {
+                        _inputBox.Text = _inputBox.Text.Insert(selStart, emoji);
+                        _inputBox.SelectionStart = selStart + emoji.Length;
+                    }
                 }
                 else
                 {
-                    AppendCentered($"⚠️ 未知表情: {rest}，输入 /emoji 查看列表", Color.Gray);
+                    AppendCentered($"⚠️ 未知表情: {rest}", Color.Gray);
                 }
             }
             _inputBox.Focus();
@@ -303,6 +373,25 @@ public class ChatForm : Form
 
         _inputBox.Clear();
         _inputBox.Focus();
+    }
+
+    // ==========================================================
+    // 弹出表情面板（在输入框上方）
+    // ==========================================================
+    private void ShowEmojiPicker()
+    {
+        // 定位在输入框正上方（用屏幕坐标换算，不受布局嵌套影响）
+        Point inputScreen = _inputBox.PointToScreen(Point.Empty);
+        Point formScreen = PointToScreen(Point.Empty);
+
+        int panelX = 5;
+        int panelY = inputScreen.Y - formScreen.Y - _emojiPanel.Height - 5;
+        if (panelY < 30) panelY = 30; // 防止超出顶部
+
+        _emojiPanel.Location = new Point(panelX, panelY);
+        _emojiPanel.Visible = !_emojiPanel.Visible;
+        if (_emojiPanel.Visible)
+            _emojiPanel.Focus();
     }
 
     // ==========================================================
