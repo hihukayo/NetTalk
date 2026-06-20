@@ -743,13 +743,14 @@ public class ChatForm : Form
                         if (msg.Args[0].StartsWith("[私聊"))
                         {
                             string target = msg.Args[0].Substring(msg.Args[0].IndexOf(']') + 1);
-                            AppendCentered($"💌 我 私信 {target}: {msg.Args[1]}", Color.FromArgb(7, 193, 96));
+                            string displayTarget = target == _username ? "自己" : target;
+                            AppendCentered($"💌 我私信{displayTarget}: {msg.Args[1]}", Color.FromArgb(7, 193, 96));
                             SaveToLog($"💌 私聊 我 -> {target}: {msg.Args[1]}");
                         }
                         else
                         {
-                            AppendCentered($"💌 {msg.Args[0]} 私信你: {msg.Args[1]}", Color.Gray);
-                            SaveToLog($"💌 私聊 {msg.Args[0]} → 我: {msg.Args[1]}");
+                            AppendCentered($"💌 {msg.Args[0]}私信你: {msg.Args[1]}", Color.Gray);
+                            SaveToLog($"💌 私聊 {msg.Args[0]} -> 我: {msg.Args[1]}");
                         }
                     }
                     break;
