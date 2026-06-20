@@ -378,8 +378,8 @@ public class ChatForm : Form
 
         var atTitle = new Label
         {
-            Text = "👥 @M-gM-^AM-^KM-^?M-fM-^HM-^P",
-            Font = new Font("M-hM-^AM-^EM-^HM-^YM-^HM-^IM-^M-^BM-^AM-^L", 9, FontStyle.Bold),
+            Text = "👥 用户",
+            Font = new Font("微软雅黑", 9, FontStyle.Bold),
             ForeColor = Color.FromArgb(80, 80, 80),
             Location = new Point(8, 5),
             AutoSize = true
@@ -393,7 +393,7 @@ public class ChatForm : Form
             Location = new Point(_atContainer.Width - 22, 4),
             FlatStyle = FlatStyle.Flat,
             FlatAppearance = { BorderSize = 0 },
-            Font = new Font("M-hM-^AM-^EM-^HM-^YM-^HM-^IM-^M-^BM-^AM-^L", 8, FontStyle.Bold),
+            Font = new Font("微软雅黑", 8, FontStyle.Bold),
             ForeColor = Color.FromArgb(200, 40, 40),
             BackColor = Color.White,
             Cursor = Cursors.Hand,
@@ -457,6 +457,7 @@ public class ChatForm : Form
             AppendCentered($"🎉 {_username} 加入了聊天室", Color.Gray);
             SaveToLog($"🎉 {_username} 加入了聊天室");
         };
+        this.Activated += (s, e) => Text = $"💬 TCP 聊天室 - {_username}";
 
         Resize += (s, e) =>
         {
@@ -705,7 +706,17 @@ public class ChatForm : Form
                     {
                         bool isMe = msg.Args[0] == _username;
                         AppendBubble(msg.Args[0], msg.Args[1], isMe);
-                        if (!isMe) SaveToLog($"{msg.Args[0]}: {msg.Args[1]}");
+                        if (!isMe)
+                        {
+                            SaveToLog($"{msg.Args[0]}: {msg.Args[1]}");
+                            // 被 @ 提醒
+                            if (msg.Args[1].Contains($"@{_username}", StringComparison.OrdinalIgnoreCase))
+                            {
+                                Text = $"💬 有人@你 - {_username}";
+                                TopMost = true;
+                                TopMost = false;
+                            }
+                        }
                     }
                     break;
 
