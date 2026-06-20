@@ -231,8 +231,6 @@ payload = TYPE|arg1|arg2|...
 
 ## 截图
 
-> 将截图放入 `screenshots/` 目录后即可在此展示
-
 | 登录界面 | 聊天界面 |
 | :---: | :---: |
 | ![登录](screenshots/login.png) | ![聊天](screenshots/chat.png) |
