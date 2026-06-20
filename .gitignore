@@ -1,0 +1,24 @@
+# Visual Studio 临时文件
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# 编译输出
+bin/
+obj/
+*.exe
+*.pdb
+*.dll
+
+# 项目构建文件
+.vs/
+
+# 日志 / 运行记录
+*.log
+crash.log
+
+# IDE
+.idea/
+*.swp
