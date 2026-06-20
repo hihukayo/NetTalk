@@ -233,15 +233,15 @@ payload = TYPE|arg1|arg2|...
 
 | 登入界面 | 聊天页面 |
 | :---: | :---: |
-| ![登入界面](screenshots/登入界面.png) | ![聊天页面](screenshots/聊天页面.png) |
+| ![登入界面](screenshots/login.png) | ![聊天页面](screenshots/chat.png) |
 
 | 表情面板 | @ 用户 | 服务端运行 |
 | :---: | :---: | :---: |
-| ![表情面板](screenshots/emoji.png) | ![@用户](screenshots/@用户.png) | ![服务端运行](screenshots/服务端运行.png) |
+| ![表情面板](screenshots/emoji.png) | ![@用户](screenshots/at.png) | ![服务端运行](screenshots/server.png) |
 
 | 运行效果总览 |
 | :---: |
-| ![运行效果截图](screenshots/运行效果截图.png) |
+| ![运行效果截图](screenshots/overview.png) |
 
 ---
 
